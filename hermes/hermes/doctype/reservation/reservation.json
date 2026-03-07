@@ -1,0 +1,197 @@
+{
+ "actions": [],
+ "autoname": "format:R{YY}-{#}",
+ "creation": "2025-02-01 18:32:01.524711",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "datos_generales_section",
+  "fecha_entrada",
+  "fecha_salida",
+  "cliente",
+  "customer_name",
+  "telefono",
+  "show_room_not_payedtentative",
+  "column_break_gzqz",
+  "estado_reserva",
+  "notas",
+  "tipo_contacto",
+  "section_break_wjiv",
+  "reserva_detalle",
+  "section_break_vyng",
+  "total_global",
+  "column_break_lpwr",
+  "total_abonado",
+  "column_break_jwyj",
+  "total_pendiente",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "fecha_entrada",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Entry Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fecha_salida",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Departure Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_gzqz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cliente",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "TENTATIVO",
+   "fieldname": "estado_reserva",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reservation Status",
+   "options": "TENTATIVO\nRESERVA SIN PAGO\nRESERVA PAGADA\nNO SHOW",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "notas",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  },
+  {
+   "fieldname": "section_break_vyng",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_global",
+   "fieldtype": "Currency",
+   "label": "Total Cost",
+   "non_negative": 1,
+   "precision": "2",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_lpwr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_abonado",
+   "fieldtype": "Currency",
+   "label": "Amount Paid",
+   "non_negative": 1,
+   "precision": "2",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_jwyj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_pendiente",
+   "fieldtype": "Currency",
+   "label": "Outstanding Balance",
+   "non_negative": 1,
+   "precision": "2",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "DIRECTO",
+   "fieldname": "tipo_contacto",
+   "fieldtype": "Select",
+   "label": "Type of Approach",
+   "options": "DIRECTO\nREDES\nAGENCIA"
+  },
+  {
+   "fieldname": "telefono",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "datos_generales_section",
+   "fieldtype": "Section Break",
+   "label": "Datos Generales"
+  },
+  {
+   "fieldname": "section_break_wjiv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reserva_detalle",
+   "fieldtype": "Table",
+   "label": "Reservation Detail",
+   "options": "reservation_detail"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "reservation",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "show_room_not_payedtentative",
+   "fieldtype": "Check",
+   "label": "Show Room Not Payed/Tentative"
+  },
+  {
+   "fetch_from": "cliente.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-04-16 16:17:11.257267",
+ "modified_by": "Administrator",
+ "module": "Hermes",
+ "name": "reservation",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
