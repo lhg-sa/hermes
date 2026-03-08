@@ -40,6 +40,7 @@ watch(
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--color-background);
+  overflow: visible !important;
 }
 
 /* Fade transition */

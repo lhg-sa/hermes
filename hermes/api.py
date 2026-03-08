@@ -47,12 +47,12 @@ def check_session():
         'authenticated': user != 'Guest'
     }
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_rooms():
     """Get all enabled rooms"""
-    # Check if user is logged in
+    # Check authentication
     if frappe.session.user == 'Guest':
-        frappe.throw('Not authenticated', frappe.PermissionError)
+        return []
     
     rooms = frappe.db.sql("""
         SELECT name, habitacion, distribucion, costo
@@ -62,12 +62,12 @@ def get_rooms():
     """, as_dict=True)
     return rooms
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_week_availability(start_date=None):
     """Get room availability for a week starting from start_date"""
-    # Check if user is logged in
+    # Check authentication
     if frappe.session.user == 'Guest':
-        frappe.throw('Not authenticated', frappe.PermissionError)
+        return {'rooms': {}, 'totals': {}, 'week_info': {'days': [], 'month': '', 'year': '', 'weeks': ''}, 'start_date': None}
     
     # Use Guatemala timezone for today
     guatemala_today = get_guatemala_today()
@@ -237,7 +237,7 @@ def get_month_name(month):
     ]
     return months[month - 1]
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_reservation_details(reservation_id):
     """Get detailed information about a reservation"""
     if frappe.session.user == 'Guest':
@@ -347,7 +347,7 @@ def get_available_rooms():
     return rooms or []
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_available_rooms_for_dates(fecha_entrada, fecha_salida):
     """Get rooms available for specific date range"""
     if frappe.session.user == 'Guest':
@@ -388,14 +388,24 @@ def get_available_rooms_for_dates(fecha_entrada, fecha_salida):
     return available_rooms
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def search_customers(search):
     """Search for customers by name"""
+    # Check authentication
     if frappe.session.user == 'Guest':
-        frappe.throw('Not authenticated', frappe.PermissionError)
-    
-    if not search or len(search) < 2:
         return []
+    
+    # If search is empty or too short, return all customers
+    if not search or len(search) < 1:
+        customers = frappe.db.sql("""
+            SELECT 
+                name,
+                customer_name
+            FROM `tabCustomer`
+            ORDER BY customer_name
+            LIMIT 50
+        """, as_dict=True)
+        return customers or []
     
     customers = frappe.db.sql("""
         SELECT 
@@ -403,7 +413,6 @@ def search_customers(search):
             customer_name
         FROM `tabCustomer`
         WHERE customer_name LIKE %s
-        AND disabled = 0
         ORDER BY customer_name
         LIMIT 20
     """, (f'%{search}%',), as_dict=True)
@@ -411,11 +420,12 @@ def search_customers(search):
     return customers or []
 
 
-@frappe.whitelist()
-def create_reservation(cliente, fecha_entrada, fecha_salida, habitacion, precio_base, estado_reserva='TENTATIVO', notas=''):
+@frappe.whitelist(allow_guest=True)
+def create_reservation(cliente, customer_name, fecha_entrada, fecha_salida, habitacion, precio_base, estado_reserva='TENTATIVO', total_abonado=0, notas=''):
     """Create a new reservation"""
+    # Check authentication
     if frappe.session.user == 'Guest':
-        frappe.throw('Not authenticated', frappe.PermissionError)
+        return {'success': False, 'error': 'Not authenticated'}
     
     # Calculate nights and total
     start_date = datetime.strptime(fecha_entrada, '%Y-%m-%d').date()
@@ -427,8 +437,14 @@ def create_reservation(cliente, fecha_entrada, fecha_salida, habitacion, precio_
     
     total = float(precio_base) * nights
     
+    # Handle total_abonado
+    try:
+        total_abonado = float(total_abonado) if total_abonado else 0
+    except (ValueError, TypeError):
+        total_abonado = 0
+    
     # Get customer name
-    customer_name = frappe.db.get_value('Customer', cliente, 'customer_name')
+    customer_name = customer_name or frappe.db.get_value('Customer', cliente, 'customer_name')
     
     # Create reservation
     reservation = frappe.new_doc('reservation')
@@ -439,8 +455,9 @@ def create_reservation(cliente, fecha_entrada, fecha_salida, habitacion, precio_
     reservation.estado_reserva = estado_reserva
     reservation.notas = notas
     reservation.total_global = total
-    reservation.total_abonado = 0
-    reservation.total_pendiente = total
+    reservation.total_abonado = total_abonado
+    reservation.total_pendiente = total - total_abonado
+    reservation.test = customer_name
     
     # Add room detail
     reservation.append('reserva_detalle', {
@@ -449,17 +466,50 @@ def create_reservation(cliente, fecha_entrada, fecha_salida, habitacion, precio_
         'total_estadia': total
     })
     
-    reservation.insert()
+    reservation.insert(ignore_permissions=True)
     frappe.db.commit()
-    
-    return {'success': True, 'reservation_id': reservation.name}
+
+    saved_reservation = frappe.get_doc('reservation', reservation.name)
+
+    return {
+        'success': True, 
+        'reservation_id': reservation.name,
+        'total_abonado': saved_reservation.total_abonado,
+        'test': saved_reservation.test,
+        'total_pendiente': saved_reservation.total_pendiente,
+        'total_global': saved_reservation.total_global
+    }
 
 
-@frappe.whitelist()
-def create_customer(customer_name):
-    """Create a new customer"""
+@frappe.whitelist(allow_guest=True)
+def debug_reservation_storage(reservation_id):
+    """Inspect raw saved values for reservation fields"""
     if frappe.session.user == 'Guest':
-        frappe.throw('Not authenticated', frappe.PermissionError)
+        return {'success': False, 'error': 'Not authenticated'}
+
+    doc = frappe.get_doc('reservation', reservation_id)
+    meta = frappe.get_meta('reservation')
+
+    return {
+        'success': True,
+        'reservation_id': doc.name,
+        'doc_total_abonado': doc.total_abonado,
+        'doc_test': doc.test,
+        'doc_customer_name': doc.customer_name,
+        'db_total_abonado': frappe.db.get_value('reservation', doc.name, 'total_abonado'),
+        'db_test': frappe.db.get_value('reservation', doc.name, 'test'),
+        'db_customer_name': frappe.db.get_value('reservation', doc.name, 'customer_name'),
+        'field_total_abonado_type': meta.get_field('total_abonado').fieldtype if meta.get_field('total_abonado') else None,
+        'field_test_type': meta.get_field('test').fieldtype if meta.get_field('test') else None,
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def create_customer(customer_name, telefono='', nit=''):
+    """Create a new customer"""
+    # Check authentication
+    if frappe.session.user == 'Guest':
+        return {'success': False, 'error': 'Not authenticated'}
     
     if not customer_name or not customer_name.strip():
         frappe.throw('El nombre del cliente es requerido')
@@ -473,6 +523,16 @@ def create_customer(customer_name):
     customer = frappe.new_doc('Customer')
     customer.customer_name = customer_name.strip()
     customer.customer_type = 'Individual'
+    
+    # Add phone if provided
+    if telefono and telefono.strip():
+        customer.custom_customer_phone = telefono.strip()
+    
+    # Add NIT if provided
+    if nit and nit.strip():
+        customer.nit_face_customer = nit.strip()
+        customer.custom_nit_face_customer = nit.strip()
+    
     customer.insert()
     frappe.db.commit()
     

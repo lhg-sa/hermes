@@ -22,6 +22,7 @@
   "total_global",
   "column_break_lpwr",
   "total_abonado",
+  "test",
   "column_break_jwyj",
   "total_pendiente",
   "amended_from"
@@ -90,13 +91,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
    "fieldname": "total_abonado",
-   "fieldtype": "Currency",
+   "fieldtype": "Data",
    "label": "Amount Paid",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "column_break_jwyj",
@@ -165,16 +164,21 @@
    "in_standard_filter": 1,
    "label": "Customer Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "test",
+   "fieldtype": "Data",
+   "label": "test"
   }
  ],
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
+ "is_submittable": 0,
  "links": [],
- "modified": "2025-04-16 16:17:11.257267",
+ "modified": "2026-03-08 11:23:06.786326",
  "modified_by": "Administrator",
  "module": "Hermes",
  "name": "reservation",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

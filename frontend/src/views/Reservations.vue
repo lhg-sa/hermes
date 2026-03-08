@@ -1,26 +1,37 @@
 <template>
-  <div class="reservations-container">
+  <div class="reservations-container" @click="pageClicked">
     <!-- Header -->
     <div class="top-header">
       <h1 class="header-title">Nueva Reserva</h1>
+    </div>
+    
+    <!-- Debug info -->
+    <div style="background: yellow; padding: 10px; font-size: 12px;">
+      DEBUG: customerSearch = "{{ customerSearch }}" | showDropdown = {{ showDropdown }} | filteredCustomers = {{ filteredCustomers.length }}
     </div>
 
     <!-- Form -->
     <div class="form-content">
       <!-- Customer Selection -->
-      <div class="form-group">
+      <div class="form-group customer-group">
         <label>Cliente *</label>
         <div class="customer-search">
           <input 
             type="text" 
             v-model="customerSearch" 
             @input="onCustomerInput"
+            @focus="onCustomerFocus"
             placeholder="Escribe el nombre del cliente..."
             class="form-input"
             :disabled="!!form.cliente"
+            autocomplete="off"
           />
           <!-- Dropdown -->
-          <div v-if="showDropdown && customerSearch.length >= 2" class="customer-results">
+          <div 
+            v-if="showDropdown" 
+            class="customer-results"
+          >
+            DEBUG: showDropdown={{ showDropdown }}, search={{ customerSearch.length }}, loading={{ isLoadingCustomers }}
             <!-- Loading -->
             <div v-if="isLoadingCustomers" class="customer-option loading">
               <div class="btn-spinner small"></div>
@@ -49,9 +60,9 @@
               </div>
               <!-- Create new customer option -->
               <div 
-                v-if="!hasExactMatch && !isCreatingCustomer"
+                v-if="!hasExactMatch && !isCreatingCustomer && !showNewCustomerForm"
                 class="customer-option create-new"
-                @click="createNewCustomer"
+                @click="showNewCustomerForm = true"
               >
                 <div class="customer-option-main">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="customer-icon">
@@ -60,6 +71,26 @@
                   <span>Crear: "{{ customerSearch }}"</span>
                 </div>
                 <span class="customer-label new">Nuevo</span>
+              </div>
+              <!-- New customer form -->
+              <div v-if="showNewCustomerForm" class="customer-new-form">
+                <div class="new-form-title">Nuevo Cliente</div>
+                <div class="form-group">
+                  <label>Nombre</label>
+                  <input type="text" v-model="customerSearch" class="form-input" readonly />
+                </div>
+                <div class="form-group">
+                  <label>Teléfono</label>
+                  <input type="tel" v-model="form.telefono" class="form-input" placeholder="Número de teléfono" />
+                </div>
+                <div class="form-group">
+                  <label>NIT</label>
+                  <input type="text" v-model="form.nit" class="form-input" placeholder="NIT del cliente" />
+                </div>
+                <div class="new-form-buttons">
+                  <button class="btn-cancel" @click="cancelNewCustomer" type="button">Cancelar</button>
+                  <button class="btn-confirm" @click="confirmCreateCustomer" type="button">Confirmar</button>
+                </div>
               </div>
               <!-- Creating spinner -->
               <div v-if="isCreatingCustomer" class="customer-option loading">
@@ -147,6 +178,17 @@
         </select>
       </div>
 
+      <!-- Total Abonado -->
+      <div class="form-group">
+        <label>Total Abonado</label>
+        <input 
+          type="text" 
+          v-model="form.total_abonado"
+          placeholder="Monto total pagado"
+          class="form-input"
+        />
+      </div>
+
       <!-- Notes -->
       <div class="form-group">
         <label>Notas</label>
@@ -179,22 +221,37 @@ const { t } = useI18n()
 const { logout } = useAuth()
 const { formatNumber, formatCurrency } = useFormatters()
 
-const saving = ref(false)
+// Page click handler for debugging
+const pageClicked = () => {
+  console.log('Page clicked!')
+}
+
+onMounted(() => {
+  console.log('Reservations mounted')
+  // Rooms will be loaded when dates are set
+})
 const customerSearch = ref('')
 const filteredCustomers = ref([])
+const allCustomers = ref([]) // Cache all customers
 const showDropdown = ref(false)
 const isLoadingCustomers = ref(false)
 const isCreatingCustomer = ref(false)
+const saving = ref(false)
 const availableRooms = ref([])
+const showNewCustomerFields = ref(false)
+const showNewCustomerForm = ref(false)
 
 const form = ref({
   cliente: '',
   customer_name: '',
+  telefono: '',
+  nit: '',
   fecha_entrada: '',
   fecha_salida: '',
   habitacion: '',
   precio_base: 0,
   estado_reserva: 'TENTATIVO',
+  total_abonado: 0,
   notas: ''
 })
 
@@ -285,13 +342,51 @@ const setThisWeekend = () => {
 
 let searchTimeout = null
 
-const onCustomerInput = () => {
-  // Show dropdown immediately when typing
-  if (customerSearch.value.length >= 2) {
-    showDropdown.value = true
-  } else {
-    showDropdown.value = false
+const onCustomerFocus = () => {
+  // Show dropdown on focus
+  showDropdown.value = true
+  showNewCustomerFields.value = true
+  
+  // Only load customers if we haven't loaded yet
+  if (allCustomers.value.length === 0 && !isLoadingCustomers.value) {
+    loadAllCustomers()
+  }
+}
+
+const loadAllCustomers = async () => {
+  if (isLoadingCustomers.value) return // Guard against multiple calls
+  
+  console.log('Loading all customers...')
+  isLoadingCustomers.value = true
+  try {
+    const result = await call('hermes.api.search_customers', {
+      search: ''
+    })
+    allCustomers.value = result || []
+    filteredCustomers.value = allCustomers.value
+  } catch (e) {
+    console.error('Error loading customers:', e)
+    allCustomers.value = []
     filteredCustomers.value = []
+  } finally {
+    isLoadingCustomers.value = false
+  }
+}
+
+const onCustomerInput = () => {
+  console.log('onCustomerInput called, search:', customerSearch.value)
+  
+  // Show dropdown from the start when there's any input
+  if (customerSearch.value.length > 0) {
+    showDropdown.value = true
+    showNewCustomerFields.value = true
+    console.log('Showing dropdown')
+  } else {
+    // Show all customers when input is empty
+    showDropdown.value = true
+    showNewCustomerFields.value = true
+    filteredCustomers.value = allCustomers.value
+    console.log('Showing all customers')
     return
   }
   
@@ -302,12 +397,15 @@ const onCustomerInput = () => {
   
   // Debounce search
   searchTimeout = setTimeout(async () => {
+    console.log('Executing search for:', customerSearch.value)
     isLoadingCustomers.value = true
     try {
       const result = await call('hermes.api.search_customers', {
         search: customerSearch.value
       })
+      console.log('Search result:', result)
       filteredCustomers.value = result || []
+      console.log('Filtered customers:', filteredCustomers.value)
     } catch (e) {
       console.error('Error searching customers:', e)
       filteredCustomers.value = []
@@ -318,29 +416,48 @@ const onCustomerInput = () => {
 }
 
 const selectCustomer = (customer) => {
+  console.log('selectCustomer called, customer:', customer)
   form.value.cliente = customer.name
   form.value.customer_name = customer.customer_name
   customerSearch.value = ''
   showDropdown.value = false
+  showNewCustomerFields.value = false
   filteredCustomers.value = []
+  console.log('Customer selected, form.cliente:', form.value.cliente)
 }
 
-const createNewCustomer = async () => {
+const cancelNewCustomer = () => {
+  showNewCustomerForm.value = false
+  form.value.telefono = ''
+  form.value.nit = ''
+}
+
+const confirmCreateCustomer = async () => {
+  console.log('confirmCreateCustomer called, name:', customerSearch.value)
   if (!customerSearch.value.trim()) return
   
   isCreatingCustomer.value = true
   
   try {
+    console.log('Calling create_customer API...')
     const result = await call('hermes.api.create_customer', {
-      customer_name: customerSearch.value.trim()
+      customer_name: customerSearch.value.trim(),
+      telefono: form.value.telefono || '',
+      nit: form.value.nit || ''
     })
+    console.log('Create customer result:', result)
     
     if (result && result.name) {
       form.value.cliente = result.name
       form.value.customer_name = result.customer_name
       customerSearch.value = ''
       showDropdown.value = false
+      showNewCustomerForm.value = false
+      showNewCustomerFields.value = false
+      form.value.telefono = ''
+      form.value.nit = ''
       filteredCustomers.value = []
+      console.log('Customer created successfully')
     }
   } catch (e) {
     console.error('Error creating customer:', e)
@@ -353,6 +470,9 @@ const createNewCustomer = async () => {
 const clearCustomer = () => {
   form.value.cliente = ''
   form.value.customer_name = ''
+  form.value.telefono = ''
+  form.value.nit = ''
+  showNewCustomerFields.value = false
 }
 
 const updateRoomPrice = () => {
@@ -371,27 +491,59 @@ const saveReservation = async () => {
   saving.value = true
   
   try {
-    await call('hermes.api.create_reservation', {
+    console.log('Saving reservation with total_abonado:', form.value.total_abonado)
+    const result = await call('hermes.api.create_reservation', {
       cliente: form.value.cliente,
+      customer_name: form.value.customer_name,
       fecha_entrada: form.value.fecha_entrada,
       fecha_salida: form.value.fecha_salida,
       habitacion: form.value.habitacion,
       precio_base: form.value.precio_base,
       estado_reserva: form.value.estado_reserva,
+      total_abonado: form.value.total_abonado || 0,
       notas: form.value.notas
     })
+    console.log('Reservation created result:', result)
+    console.log('  reservation_id:', result.reservation_id)
+    console.log('  total_abonado from server:', result.total_abonado)
+    console.log('  total_pendiente from server:', result.total_pendiente)
+    console.log('  total_global from server:', result.total_global)
+
+    let debugResult = null
+    if (result.success && result.reservation_id) {
+      debugResult = await call('hermes.api.debug_reservation_storage', {
+        reservation_id: result.reservation_id
+      })
+      console.log('Reservation debug result:', debugResult)
+    }
+    
+    // Show success message with reservation ID and field values
+    if (result.success && result.reservation_id) {
+      const msg = 'Reserva creada: ' + result.reservation_id + 
+        '\n\ntotal_abonado enviado: ' + (form.value.total_abonado || 0) +
+        '\ntotal_abonado guardado: ' + ((debugResult && debugResult.db_total_abonado) || result.total_abonado || 0) +
+        '\ntest guardado: ' + ((debugResult && debugResult.db_test) || result.test || 'VACIO') +
+        '\ncustomer_name db: ' + ((debugResult && debugResult.db_customer_name) || 'VACIO') +
+        '\ntipo total_abonado: ' + ((debugResult && debugResult.field_total_abonado_type) || 'N/D') +
+        '\ntipo test: ' + ((debugResult && debugResult.field_test_type) || 'N/D')
+      alert(msg)
+    }
     
     // Reset form
     form.value = {
       cliente: '',
       customer_name: '',
+      telefono: '',
+      nit: '',
       fecha_entrada: '',
       fecha_salida: '',
       habitacion: '',
       precio_base: 0,
       estado_reserva: 'TENTATIVO',
+      total_abonado: 0,
       notas: ''
     }
+    showNewCustomerFields.value = false
     
     // Go to availability
     router.push('/availability')
@@ -430,6 +582,7 @@ onMounted(() => {
   flex-direction: column;
   background: #f0f4f8;
   padding-bottom: 70px;
+  overflow: visible;
 }
 
 /* Header */
@@ -456,7 +609,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-x: hidden;
+  overflow: visible !important;
 }
 
 /* Form */
@@ -464,6 +617,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Customer Group - needs overflow visible for dropdown */
+.customer-group {
+  position: relative;
+  z-index: 100;
+  overflow: visible !important;
 }
 
 .form-group label {
@@ -592,7 +754,7 @@ onMounted(() => {
 .customer-search {
   position: relative;
   width: 100%;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .customer-search .form-input {
@@ -609,12 +771,11 @@ onMounted(() => {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-height: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  max-height: 250px;
   overflow-y: auto;
-  z-index: 10;
+  z-index: 1000;
   margin-top: 4px;
-  width: 100%;
   box-sizing: border-box;
 }
 
@@ -841,5 +1002,71 @@ onMounted(() => {
 
 .nav-item.active svg {
   stroke-width: 2.5;
+}
+
+/* New Customer Form */
+.customer-new-form {
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.new-form-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.customer-new-form .form-group {
+  margin-bottom: 0.5rem;
+}
+
+.customer-new-form .form-group label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.customer-new-form .form-input {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+.new-form-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.btn-cancel, .btn-confirm {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-confirm {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: #2563eb;
 }
 </style>

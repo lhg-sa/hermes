@@ -34,6 +34,19 @@ website_route_rules = [
 	{"from_route": "/hermes/<path:app_path>", "to_route": "hermes"},
 ]
 
+# Whitelist API methods for guest access
+whitelisted_methods = [
+	"hermes.api.get_app",
+	"hermes.api.check_session",
+	"hermes.api.get_rooms",
+	"hermes.api.get_week_availability",
+	"hermes.api.get_reservation_details",
+	"hermes.api.get_available_rooms_for_dates",
+	"hermes.api.search_customers",
+	"hermes.api.create_customer",
+	"hermes.api.create_reservation",
+]
+
 # include js, css files in header of web template
 # web_include_css = "/assets/hermes/css/hermes.css"
 # web_include_js = "/assets/hermes/js/hermes.js"

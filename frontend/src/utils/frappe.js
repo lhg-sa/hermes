@@ -67,6 +67,7 @@ export async function login(email, password) {
  * @returns {Promise<any>}
  */
 export async function call(method, params = {}) {
+  console.log('call() called with method:', method, 'params:', params)
   try {
     const response = await fetch(`/api/method/${method}`, {
       method: 'POST',
@@ -76,6 +77,7 @@ export async function call(method, params = {}) {
       body: JSON.stringify(params),
       credentials: 'include'
     })
+    console.log('call() response status:', response.status)
 
     if (response.status === 403) {
       // Session expired or not authenticated
@@ -85,7 +87,15 @@ export async function call(method, params = {}) {
     }
 
     if (!response.ok) {
-      throw new Error(`API call failed: ${response.status}`)
+      // Try to get error details from response
+      let errorDetail = `API call failed: ${response.status}`
+      try {
+        const errorData = await response.json()
+        errorDetail = errorData.message || errorData.exception || errorDetail
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+      throw new Error(errorDetail)
     }
 
     const data = await response.json()
@@ -103,13 +113,16 @@ export async function call(method, params = {}) {
  * @returns {Promise<{authenticated: boolean, user?: string}>}
  */
 export async function checkAuth() {
+  console.log('checkAuth called')
   try {
     const response = await fetch('/api/method/hermes.api.check_session', {
       method: 'POST',
       credentials: 'include'
     })
+    console.log('checkAuth response status:', response.status)
     if (response.ok) {
       const data = await response.json()
+      console.log('checkAuth data:', data)
       return { 
         authenticated: data.message?.authenticated === true,
         user: data.message?.user 

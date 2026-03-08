@@ -5,10 +5,25 @@
 import frappe
 from datetime import datetime, timedelta
 from frappe.utils import add_days
+from frappe.utils import flt
 from frappe.utils import getdate
 from frappe.model.document import Document
 
 class reservation(Document):
+    def before_save(self):
+        self._sync_payment_fields()
+
+    def before_submit(self):
+        self._sync_payment_fields()
+        if self.estado_reserva == "RESERVA PAGADA" and flt(self.total_abonado) <= 0:
+            frappe.throw("If the reservation is marked as 'RESERVA PAGADA', Amount Paid must be greater than 0.")
+
+    def _sync_payment_fields(self):
+        total_abonado = flt(self.total_abonado)
+        self.total_abonado = total_abonado
+        self.test = self.customer_name or self.cliente or ""
+        self.total_pendiente = flt(self.total_global) - total_abonado
+
     def on_cancel(self):
         delete_related_reservation_details(self.name)
     
@@ -20,10 +35,6 @@ class reservation(Document):
             frappe.db.set_value("reservation_detail_daily", record,"customer_name" , self.customer_name)
             frappe.db.set_value("reservation_detail_daily", record,"phone_number" , self.telefono)
         frappe.db.commit()
-
-    def before_submit(self):
-        if self.estado_reserva == "RESERVA PAGADA" and self.total_abonado <= 0:
-            frappe.throw("If the reservation is marked as 'RESERVA PAGADA', Amount Paid must be greater than 0.")
 
 def delete_related_reservation_details(reservation_id):
     frappe.db.delete("reservation_detail_daily", {"reserva_dia_id": reservation_id})
