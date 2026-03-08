@@ -4,8 +4,13 @@ import App from './App.vue'
 import Login from './views/Login.vue'
 import Home from './views/Home.vue'
 import Availability from './views/Availability.vue'
+import Reservations from './views/Reservations.vue'
 import ReservationDetail from './views/ReservationDetail.vue'
 import { checkAuth } from './utils/frappe.js'
+
+// Shared styles
+import './styles/variables.css'
+import './styles/common.css'
 import './theme/index.css'
 
 // Router configuration
@@ -29,6 +34,12 @@ const routes = [
     path: '/availability',
     name: 'Availability',
     component: Availability,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservations',
+    name: 'Reservations',
+    component: Reservations,
     meta: { requiresAuth: true }
   },
   {

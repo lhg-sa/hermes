@@ -67,16 +67,10 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando disponibilidad...</p>
-    </div>
+    <LoadingState v-if="loading" :message="t('availability.loading', 'Cargando disponibilidad...')" />
 
     <!-- Error State -->
-    <div v-else-if="error" class="error-state">
-      <p>{{ error }}</p>
-      <button @click="loadData" class="retry-btn">Reintentar</button>
-    </div>
+    <ErrorState v-else-if="error" :message="error" :retry="loadData" />
 
     <!-- Availability Grid -->
     <div v-else class="grid-container">
@@ -193,41 +187,23 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <router-link to="/availability" class="nav-item active">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span>Disponibilidad</span>
-      </router-link>
-      <router-link to="/reservations" class="nav-item">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <span>Reservas</span>
-      </router-link>
-      <router-link to="/reports" class="nav-item">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-        </svg>
-        <span>Reportes</span>
-      </router-link>
-      <button class="nav-item" @click="logout">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-        <span>Logout</span>
-      </button>
-    </nav>
+    <BottomNavigation active="availability" @logout="logout" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { call, logout as frappeLogout } from '../utils/frappe.js'
+import { call } from '../utils/frappe.js'
+import { useI18n } from '../composables/useI18n'
+import { useAuth } from '../composables/useAuth'
+import BottomNavigation from '../components/BottomNavigation.vue'
+import LoadingState from '../components/LoadingState.vue'
+import ErrorState from '../components/ErrorState.vue'
 
 const router = useRouter()
+const { t } = useI18n()
+const { logout } = useAuth()
 
 const loading = ref(true)
 const error = ref('')
@@ -241,8 +217,18 @@ const showMonthYearSelector = ref(false)
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth())
 const months = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  t('months.january', 'Enero'),
+  t('months.february', 'Febrero'),
+  t('months.march', 'Marzo'),
+  t('months.april', 'Abril'),
+  t('months.may', 'Mayo'),
+  t('months.june', 'Junio'),
+  t('months.july', 'Julio'),
+  t('months.august', 'Agosto'),
+  t('months.september', 'Septiembre'),
+  t('months.october', 'Octubre'),
+  t('months.november', 'Noviembre'),
+  t('months.december', 'Diciembre')
 ]
 const availableYears = ref([])
 
@@ -337,12 +323,6 @@ const applyMonthYear = () => {
 
 const goBack = () => {
   router.push('/home')
-}
-
-const logout = async () => {
-  await frappeLogout()
-  localStorage.removeItem('hermes_token')
-  router.push('/login')
 }
 
 const getStatusClass = (status) => {

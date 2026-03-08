@@ -75,7 +75,7 @@
           :disabled="loading"
           class="submit-btn"
         >
-          <span v-if="loading" class="loading-spinner"></span>
+          <Spinner v-if="loading" size="sm" />
           <span v-else>Iniciar Sesión</span>
         </button>
       </form>
@@ -91,8 +91,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { login } from '../utils/frappe.js'
+import { useI18n } from '../composables/useI18n'
+import Spinner from '../components/Spinner.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
