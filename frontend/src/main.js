@@ -4,6 +4,7 @@ import App from './App.vue'
 import Login from './views/Login.vue'
 import Home from './views/Home.vue'
 import Availability from './views/Availability.vue'
+import ReservationDetail from './views/ReservationDetail.vue'
 import { checkAuth } from './utils/frappe.js'
 import './theme/index.css'
 
@@ -28,6 +29,12 @@ const routes = [
     path: '/availability',
     name: 'Availability',
     component: Availability,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservation/:id',
+    name: 'ReservationDetail',
+    component: ReservationDetail,
     meta: { requiresAuth: true }
   }
 ]

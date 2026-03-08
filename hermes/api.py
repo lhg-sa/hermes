@@ -236,3 +236,70 @@ def get_month_name(month):
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ]
     return months[month - 1]
+
+@frappe.whitelist()
+def get_reservation_details(reservation_id):
+    """Get detailed information about a reservation"""
+    if frappe.session.user == 'Guest':
+        frappe.throw('Not authenticated', frappe.PermissionError)
+    
+    # Get reservation details
+    reservation = frappe.db.sql("""
+        SELECT 
+            r.name as reservation_id,
+            r.fecha_entrada,
+            r.fecha_salida,
+            r.estado_reserva,
+            r.cliente,
+            r.notas,
+            r.total_global,
+            r.total_abonado,
+            r.total_pendiente,
+            r.creation,
+            r.customer_name,
+            r.telefono
+        FROM `tabreservation` r
+        WHERE r.name = %s
+    """, (reservation_id,), as_dict=True)
+    
+    if not reservation:
+        return None
+    
+    reservation = reservation[0]
+    
+    # Get room details
+    rooms = frappe.db.sql("""
+        SELECT 
+            rd.habitacion,
+            rd.nota,
+            rd.precio_base,
+            rd.total_estadia
+        FROM `tabreservation_detail` rd
+        WHERE rd.parent = %s
+    """, (reservation_id,), as_dict=True)
+    
+    reservation['rooms'] = rooms
+    
+    # Format dates
+    if reservation.get('fecha_entrada'):
+        reservation['fecha_entrada_formatted'] = reservation['fecha_entrada'].strftime('%d/%m/%Y')
+    if reservation.get('fecha_salida'):
+        reservation['fecha_salida_formatted'] = reservation['fecha_salida'].strftime('%d/%m/%Y')
+    if reservation.get('creation'):
+        reservation['creation_formatted'] = reservation['creation'].strftime('%d/%m/%Y %H:%M')
+    
+    # Calculate nights
+    if reservation.get('fecha_entrada') and reservation.get('fecha_salida'):
+        nights = (reservation['fecha_salida'] - reservation['fecha_entrada']).days
+        reservation['nights'] = nights
+    
+    # Map status to Spanish
+    status_map = {
+        'RESERVA PAGADA': 'Pagada',
+        'RESERVA SIN PAGO': 'Sin Pago',
+        'TENTATIVO': 'Tentativo',
+        'NO SHOW': 'No Show'
+    }
+    reservation['estado_formatted'] = status_map.get(reservation.get('estado_reserva'), reservation.get('estado_reserva'))
+    
+    return reservation
