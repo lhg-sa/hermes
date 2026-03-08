@@ -375,7 +375,7 @@ onMounted(() => {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #f6f7f8;
+  background: #f0f4f8;
   padding-bottom: 70px;
 }
 
@@ -492,7 +492,7 @@ onMounted(() => {
 .month-year {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #136dec;
+  color: #2563eb;
 }
 
 .week-num {
@@ -512,7 +512,7 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #136dec 0%, #0d5bb8 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -522,12 +522,13 @@ onMounted(() => {
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(19, 109, 236, 0.3);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .current-week-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(19, 109, 236, 0.4);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+  background: #2563eb;
 }
 
 .current-week-btn:active {
@@ -571,25 +572,25 @@ onMounted(() => {
   color: #1e293b;
 }
 
-/* Status Colors */
+/* Status Colors - Light Day Theme */
 .status-tentative {
-  background: #f59e0b;
+  background: #fbbf24;
 }
 
 .status-unpaid {
-  background: #3b82f6;
+  background: #60a5fa;
 }
 
 .status-paid {
-  background: #ef4444;
+  background: #f87171;
 }
 
 .status-noshow {
-  background: #6b7280;
+  background: #9ca3af;
 }
 
 .status-free {
-  background: #22c55e;
+  background: #4ade80;
 }
 
 /* Loading & Error States */
@@ -821,7 +822,7 @@ onMounted(() => {
 }
 
 .is-today {
-  background: linear-gradient(135deg, #136dec 0%, #0d5bb8 100%);
+  background: #3b82f6;
   position: relative;
 }
 
@@ -885,36 +886,36 @@ onMounted(() => {
 
 .totals-row.tentative .total-label {
   background: white;
-  color: #f59e0b;
-  border: 2px solid #f59e0b;
+  color: #d97706;
+  border: 2px solid #fbbf24;
   border-right: 1px solid #e2e8f0;
 }
 
 .totals-row.unpaid .total-label {
   background: white;
-  color: #3b82f6;
-  border: 2px solid #3b82f6;
+  color: #2563eb;
+  border: 2px solid #60a5fa;
   border-right: 1px solid #e2e8f0;
 }
 
 .totals-row.paid .total-label {
   background: white;
-  color: #ef4444;
-  border: 2px solid #ef4444;
+  color: #dc2626;
+  border: 2px solid #f87171;
   border-right: 1px solid #e2e8f0;
 }
 
 .totals-row.noshow .total-label {
   background: white;
-  color: #6b7280;
-  border: 2px solid #6b7280;
+  color: #4b5563;
+  border: 2px solid #9ca3af;
   border-right: 1px solid #e2e8f0;
 }
 
 .totals-row.free .total-label {
   background: white;
-  color: #22c55e;
-  border: 2px solid #22c55e;
+  color: #16a34a;
+  border: 2px solid #4ade80;
   border-right: 1px solid #e2e8f0;
 }
 
@@ -953,8 +954,8 @@ onMounted(() => {
   gap: 0.375rem;
   padding: 0.5rem 1rem;
   background: white;
-  color: #136dec;
-  border: 2px solid #136dec;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
   border-radius: 6px;
   font-size: 0.625rem;
   font-weight: 700;
@@ -962,13 +963,13 @@ onMounted(() => {
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(19, 109, 236, 0.2);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .toggle-totals-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(19, 109, 236, 0.3);
-  background: #f8fafc;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  background: #eff6ff;
 }
 
 .toggle-totals-btn svg {
@@ -1020,7 +1021,7 @@ onMounted(() => {
 }
 
 .nav-item.active {
-  color: #136dec;
+  color: #3b82f6;
 }
 
 .nav-item.active svg {
