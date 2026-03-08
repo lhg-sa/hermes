@@ -1,6 +1,14 @@
 import frappe
 import os
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+# Guatemala timezone (GMT-6)
+GT_TIMEZONE = ZoneInfo('America/Guatemala')
+
+def get_guatemala_today():
+    """Get today's date in Guatemala timezone (GMT-6)"""
+    return datetime.now(GT_TIMEZONE).date()
 
 @frappe.whitelist(allow_guest=True)
 def get_app():
@@ -61,8 +69,11 @@ def get_week_availability(start_date=None):
     if frappe.session.user == 'Guest':
         frappe.throw('Not authenticated', frappe.PermissionError)
     
+    # Use Guatemala timezone for today
+    guatemala_today = get_guatemala_today()
+    
     if not start_date:
-        start_date = get_monday(datetime.now().date())
+        start_date = get_monday(guatemala_today)
     else:
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         # Ensure we start from Monday
@@ -107,9 +118,9 @@ def get_week_availability(start_date=None):
             'days': {}
         }
         
-        # Initialize all days as free
+        # Initialize all days as free (Monday to Sunday = 7 days)
         current_date = start_date
-        for i in range(8):
+        for i in range(7):
             availability[room.name]['days'][current_date.isoformat()] = {
                 'status': 'free',
                 'reservation': None
@@ -137,10 +148,10 @@ def get_week_availability(start_date=None):
                     }
                 current_date += timedelta(days=1)
     
-    # Calculate totals per day
+    # Calculate totals per day (Monday to Sunday = 7 days)
     totals = {}
     current_date = start_date
-    for i in range(8):
+    for i in range(7):
         date_str = current_date.isoformat()
         totals[date_str] = {
             'tentative': 0,
@@ -182,14 +193,15 @@ def map_status(estado_reserva):
     return status_map.get(estado_reserva, 'free')
 
 def generate_week_info(start_date):
-    """Generate week information for header"""
+    """Generate week information for header (Monday to Sunday = 7 days)"""
     days = []
     day_names = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
     
     current_date = start_date
-    today = datetime.now().date()
+    # Use Guatemala timezone for today comparison
+    today = get_guatemala_today()
     
-    for i in range(8):
+    for i in range(7):
         days.append({
             'date': current_date.isoformat(),
             'day_name': day_names[current_date.weekday()],

@@ -30,6 +30,7 @@ app_license = "mit"
 
 # Website route rules - serve PWA at /hermes
 website_route_rules = [
+	{"from_route": "/hermes", "to_route": "hermes"},
 	{"from_route": "/hermes/<path:app_path>", "to_route": "hermes"},
 ]
 
