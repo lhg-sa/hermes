@@ -939,7 +939,7 @@ onMounted(() => {
 
 /* Totals Toggle */
 .totals-toggle-row {
-  background: #f8fafc;
+  background: white;
 }
 
 .totals-toggle-cell {
@@ -980,48 +980,6 @@ onMounted(() => {
   background: white;
   color: #64748b;
   border-color: #64748b;
-}
-
-/* Totals Toggle */
-.totals-toggle-row {
-  background: #f8fafc;
-}
-
-.totals-toggle-cell {
-  padding: 0.5rem;
-  text-align: center;
-}
-
-.toggle-totals-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #136dec 0%, #0d5bb8 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 4px rgba(19, 109, 236, 0.3);
-}
-
-.toggle-totals-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(19, 109, 236, 0.4);
-}
-
-.toggle-totals-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
-.toggle-totals-btn.hide {
-  background: #64748b;
 }
 
 /* Bottom Navigation */
