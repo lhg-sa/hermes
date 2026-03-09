@@ -5,11 +5,6 @@
       <h1 class="header-title">Nueva Reserva</h1>
     </div>
     
-    <!-- Debug info -->
-    <div style="background: yellow; padding: 10px; font-size: 12px;">
-      DEBUG: customerSearch = "{{ customerSearch }}" | showDropdown = {{ showDropdown }} | filteredCustomers = {{ filteredCustomers.length }}
-    </div>
-
     <!-- Form -->
     <div class="form-content">
       <!-- Customer Selection -->
@@ -31,7 +26,6 @@
             v-if="showDropdown" 
             class="customer-results"
           >
-            DEBUG: showDropdown={{ showDropdown }}, search={{ customerSearch.length }}, loading={{ isLoadingCustomers }}
             <!-- Loading -->
             <div v-if="isLoadingCustomers" class="customer-option loading">
               <div class="btn-spinner small"></div>
@@ -209,7 +203,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { call } from '../utils/frappe.js'
 import { useI18n } from '../composables/useI18n'
 import { useAuth } from '../composables/useAuth'
@@ -217,17 +211,17 @@ import { useFormatters } from '../composables/useFormatters'
 import BottomNavigation from '../components/BottomNavigation.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const { logout } = useAuth()
 const { formatNumber, formatCurrency } = useFormatters()
 
-// Page click handler for debugging
+// Page click handler
 const pageClicked = () => {
-  console.log('Page clicked!')
+  // Close dropdown when clicking outside
 }
 
 onMounted(() => {
-  console.log('Reservations mounted')
   // Rooms will be loaded when dates are set
 })
 const customerSearch = ref('')
@@ -356,7 +350,6 @@ const onCustomerFocus = () => {
 const loadAllCustomers = async () => {
   if (isLoadingCustomers.value) return // Guard against multiple calls
   
-  console.log('Loading all customers...')
   isLoadingCustomers.value = true
   try {
     const result = await call('hermes.api.search_customers', {
@@ -374,19 +367,20 @@ const loadAllCustomers = async () => {
 }
 
 const onCustomerInput = () => {
-  console.log('onCustomerInput called, search:', customerSearch.value)
-  
-  // Show dropdown from the start when there's any input
-  if (customerSearch.value.length > 0) {
+  // Show dropdown when input has 4 or more characters
+  if (customerSearch.value.length >= 4) {
     showDropdown.value = true
     showNewCustomerFields.value = true
-    console.log('Showing dropdown')
+  } else if (customerSearch.value.length > 0) {
+    // Keep dropdown hidden until 4 characters
+    showDropdown.value = false
+    showNewCustomerFields.value = false
+    return
   } else {
     // Show all customers when input is empty
     showDropdown.value = true
     showNewCustomerFields.value = true
     filteredCustomers.value = allCustomers.value
-    console.log('Showing all customers')
     return
   }
   
@@ -397,15 +391,12 @@ const onCustomerInput = () => {
   
   // Debounce search
   searchTimeout = setTimeout(async () => {
-    console.log('Executing search for:', customerSearch.value)
     isLoadingCustomers.value = true
     try {
       const result = await call('hermes.api.search_customers', {
         search: customerSearch.value
       })
-      console.log('Search result:', result)
       filteredCustomers.value = result || []
-      console.log('Filtered customers:', filteredCustomers.value)
     } catch (e) {
       console.error('Error searching customers:', e)
       filteredCustomers.value = []
@@ -416,14 +407,12 @@ const onCustomerInput = () => {
 }
 
 const selectCustomer = (customer) => {
-  console.log('selectCustomer called, customer:', customer)
   form.value.cliente = customer.name
   form.value.customer_name = customer.customer_name
   customerSearch.value = ''
   showDropdown.value = false
   showNewCustomerFields.value = false
   filteredCustomers.value = []
-  console.log('Customer selected, form.cliente:', form.value.cliente)
 }
 
 const cancelNewCustomer = () => {
@@ -433,19 +422,16 @@ const cancelNewCustomer = () => {
 }
 
 const confirmCreateCustomer = async () => {
-  console.log('confirmCreateCustomer called, name:', customerSearch.value)
   if (!customerSearch.value.trim()) return
   
   isCreatingCustomer.value = true
   
   try {
-    console.log('Calling create_customer API...')
     const result = await call('hermes.api.create_customer', {
       customer_name: customerSearch.value.trim(),
       telefono: form.value.telefono || '',
       nit: form.value.nit || ''
     })
-    console.log('Create customer result:', result)
     
     if (result && result.name) {
       form.value.cliente = result.name
@@ -457,7 +443,6 @@ const confirmCreateCustomer = async () => {
       form.value.telefono = ''
       form.value.nit = ''
       filteredCustomers.value = []
-      console.log('Customer created successfully')
     }
   } catch (e) {
     console.error('Error creating customer:', e)
@@ -491,7 +476,6 @@ const saveReservation = async () => {
   saving.value = true
   
   try {
-    console.log('Saving reservation with total_abonado:', form.value.total_abonado)
     const result = await call('hermes.api.create_reservation', {
       cliente: form.value.cliente,
       customer_name: form.value.customer_name,
@@ -503,30 +487,10 @@ const saveReservation = async () => {
       total_abonado: form.value.total_abonado || 0,
       notas: form.value.notas
     })
-    console.log('Reservation created result:', result)
-    console.log('  reservation_id:', result.reservation_id)
-    console.log('  total_abonado from server:', result.total_abonado)
-    console.log('  total_pendiente from server:', result.total_pendiente)
-    console.log('  total_global from server:', result.total_global)
 
-    let debugResult = null
+    // Show success message with reservation ID
     if (result.success && result.reservation_id) {
-      debugResult = await call('hermes.api.debug_reservation_storage', {
-        reservation_id: result.reservation_id
-      })
-      console.log('Reservation debug result:', debugResult)
-    }
-    
-    // Show success message with reservation ID and field values
-    if (result.success && result.reservation_id) {
-      const msg = 'Reserva creada: ' + result.reservation_id + 
-        '\n\ntotal_abonado enviado: ' + (form.value.total_abonado || 0) +
-        '\ntotal_abonado guardado: ' + ((debugResult && debugResult.db_total_abonado) || result.total_abonado || 0) +
-        '\ntest guardado: ' + ((debugResult && debugResult.db_test) || result.test || 'VACIO') +
-        '\ncustomer_name db: ' + ((debugResult && debugResult.db_customer_name) || 'VACIO') +
-        '\ntipo total_abonado: ' + ((debugResult && debugResult.field_total_abonado_type) || 'N/D') +
-        '\ntipo test: ' + ((debugResult && debugResult.field_test_type) || 'N/D')
-      alert(msg)
+      alert('Reserva creada: ' + result.reservation_id)
     }
     
     // Reset form
@@ -569,8 +533,44 @@ watch([() => form.value.fecha_entrada, () => form.value.fecha_salida], () => {
   }
 })
 
+// Auto-fill checkout date when checkin date is selected
+watch(() => form.value.fecha_entrada, (newCheckin, oldCheckin) => {
+  if (newCheckin && newCheckin !== oldCheckin && !form.value.fecha_salida) {
+    // Auto-fill checkout with checkin + 1 day
+    const checkinDate = new Date(newCheckin)
+    const checkoutDate = new Date(checkinDate)
+    checkoutDate.setDate(checkoutDate.getDate() + 1)
+    form.value.fecha_salida = checkoutDate.toISOString().split('T')[0]
+  }
+})
+
 onMounted(() => {
-  // Rooms will be loaded when dates are set
+  // Check for query params from availability page
+  const fechaEntrada = route.query.fecha_entrada
+  const fechaSalida = route.query.fecha_salida
+  const habitacion = route.query.habitacion
+  
+  if (fechaEntrada) {
+    form.value.fecha_entrada = fechaEntrada
+  }
+  if (fechaSalida) {
+    form.value.fecha_salida = fechaSalida
+  }
+  if (habitacion) {
+    // Need to wait for rooms to load first
+    const checkRoom = setInterval(() => {
+      if (availableRooms.value.length > 0) {
+        const room = availableRooms.value.find(r => r.name === habitacion)
+        if (room) {
+          form.value.habitacion = habitacion
+          form.value.precio_base = room.precio_base
+        }
+        clearInterval(checkRoom)
+      }
+    }, 100)
+    // Timeout after 3 seconds
+    setTimeout(() => clearInterval(checkRoom), 3000)
+  }
 })
 </script>
 
@@ -1006,48 +1006,50 @@ onMounted(() => {
 
 /* New Customer Form */
 .customer-new-form {
-  padding: 0.75rem;
+  padding: 1rem;
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  margin-top: 0.5rem;
 }
 
 .new-form-title {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #1e293b;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .customer-new-form .form-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .customer-new-form .form-group label {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 0.375rem;
+  font-weight: 500;
 }
 
 .customer-new-form .form-input {
-  font-size: 0.875rem;
-  padding: 0.5rem;
+  font-size: 1rem;
+  padding: 0.75rem;
 }
 
 .new-form-buttons {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .btn-cancel, .btn-confirm {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
   cursor: pointer;
   border: none;
 }

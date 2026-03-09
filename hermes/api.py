@@ -537,3 +537,29 @@ def create_customer(customer_name, telefono='', nit=''):
     frappe.db.commit()
     
     return {'name': customer.name, 'customer_name': customer.customer_name}
+
+@frappe.whitelist(allow_guest=True)
+def get_recent_reservations(limit=5):
+    """Get the most recent reservations"""
+    # Check authentication
+    if frappe.session.user == 'Guest':
+        return []
+    
+    reservations = frappe.db.sql("""
+        SELECT 
+            name,
+            customer_name,
+            habitacion,
+            fecha_entrada,
+            fecha_salida,
+            estado_reserva,
+            total_global,
+            total_abonado,
+            total_pendiente,
+            creation
+        FROM `tabreservation`
+        ORDER BY creation DESC
+        LIMIT %(limit)s
+    """, {'limit': int(limit)}, as_dict=True)
+    
+    return reservations

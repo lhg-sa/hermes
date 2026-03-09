@@ -338,8 +338,31 @@ const getStatusClass = (status) => {
 
 const onCellClick = (room, day) => {
   const dayData = room.days[day.date]
+  
+  // If cell is available (green/free), navigate to create reservation with dates
+  if (!dayData?.reservation && dayData?.status === 'free') {
+    // Calculate checkout date (one day after checkin)
+    const checkinDate = new Date(day.date)
+    const checkoutDate = new Date(checkinDate)
+    checkoutDate.setDate(checkoutDate.getDate() + 1)
+    
+    const checkinStr = checkinDate.toISOString().split('T')[0]
+    const checkoutStr = checkoutDate.toISOString().split('T')[0]
+    
+    // Navigate to reservations with pre-filled dates
+    router.push({
+      path: '/reservations',
+      query: {
+        fecha_entrada: checkinStr,
+        fecha_salida: checkoutStr,
+        habitacion: room.name
+      }
+    })
+    return
+  }
+  
+  // If there's a reservation, navigate to detail
   if (dayData?.reservation) {
-    // Navigate to reservation detail
     router.push(`/reservation/${dayData.reservation.id}`)
   }
 }

@@ -6,6 +6,7 @@ import Home from './views/Home.vue'
 import Availability from './views/Availability.vue'
 import Reservations from './views/Reservations.vue'
 import ReservationDetail from './views/ReservationDetail.vue'
+import Reports from './views/Reports.vue'
 import { checkAuth } from './utils/frappe.js'
 
 // Shared styles
@@ -46,6 +47,12 @@ const routes = [
     path: '/reservation/:id',
     name: 'ReservationDetail',
     component: ReservationDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reports',
+    name: 'Reports',
+    component: Reports,
     meta: { requiresAuth: true }
   }
 ]

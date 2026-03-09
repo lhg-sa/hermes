@@ -4,6 +4,8 @@ const translations = {
   // Navigation
   'nav.availability': 'Disponibilidad',
   'nav.reservations': 'Reservaciones',
+  'nav.new': 'Reservar',
+  'nav.reports': 'Reportes',
   'nav.logout': 'Cerrar Sesión',
   
   // Common
