@@ -13,12 +13,31 @@ def get_guatemala_today():
 @frappe.whitelist(allow_guest=True)
 def get_app():
     """Serve the Hermes PWA app"""
+    import hashlib
+    import time
+    
     # Get the built HTML file
-    app_path = os.path.join(os.path.dirname(__file__), '..', 'public', 'build', 'index.html')
+    app_path = os.path.join(os.path.dirname(__file__), 'public', 'hermes', 'index.html')
+    
+    # Generate a version based on file modification time for cache busting
+    version = int(os.path.getmtime(app_path)) if os.path.exists(app_path) else int(time.time())
     
     if os.path.exists(app_path):
         with open(app_path, 'r') as f:
-            return frappe.make_formatted_html(f.read())
+            html_content = f.read()
+            
+            # Inject version into the HTML to force cache refresh
+            # Replace the base href if it exists, or add meta tags
+            version_tag = f'<meta name="hermes-version" content="{version}">'
+            
+            if '<head>' in html_content:
+                html_content = html_content.replace('<head>', f'<head>\n    {version_tag}')
+            
+            # Also inject version into any script tags to force reload
+            html_content = html_content.replace('.js"', f'.js?v={version}"')
+            html_content = html_content.replace('.css"', f'.css?v={version}"')
+            
+            return frappe.make_formatted_html(html_content)
     
     # Fallback: return a simple message if build doesn't exist yet
     return """

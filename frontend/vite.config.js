@@ -45,7 +45,13 @@ export default defineConfig({
     outDir: resolve(__dirname, '../hermes/public/hermes'),
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, 'index.html')
+      input: resolve(__dirname, 'index.html'),
+      output: {
+        // Sin hash para nombres estables, la versión se maneja en API
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]'
+      }
     }
   },
   html: {
