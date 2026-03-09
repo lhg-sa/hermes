@@ -12,32 +12,43 @@ def get_guatemala_today():
 
 @frappe.whitelist(allow_guest=True)
 def get_app():
-    """Serve the Hermes PWA app"""
-    import hashlib
+    """Serve the Hermes PWA app with cache busting"""
     import time
+    import traceback
     
-    # Get the built HTML file
-    app_path = os.path.join(os.path.dirname(__file__), 'public', 'hermes', 'index.html')
-    
-    # Generate a version based on file modification time for cache busting
-    version = int(os.path.getmtime(app_path)) if os.path.exists(app_path) else int(time.time())
-    
-    if os.path.exists(app_path):
-        with open(app_path, 'r') as f:
-            html_content = f.read()
-            
-            # Inject version into the HTML to force cache refresh
-            # Replace the base href if it exists, or add meta tags
-            version_tag = f'<meta name="hermes-version" content="{version}">'
-            
-            if '<head>' in html_content:
-                html_content = html_content.replace('<head>', f'<head>\n    {version_tag}')
-            
-            # Also inject version into any script tags to force reload
-            html_content = html_content.replace('.js"', f'.js?v={version}"')
-            html_content = html_content.replace('.css"', f'.css?v={version}"')
-            
-            return frappe.make_formatted_html(html_content)
+    try:
+        # Path to built files
+        app_path = os.path.join(os.path.dirname(__file__), 'public', 'hermes', 'index.html')
+        
+        # Generate version from file modification time
+        version = int(os.path.getmtime(app_path)) if os.path.exists(app_path) else int(time.time())
+        
+        if os.path.exists(app_path):
+            with open(app_path, 'r') as f:
+                html_content = f.read()
+                
+                # Inject version meta tag
+                version_tag = f'<meta name="hermes-version" content="{version}">'
+                if '<head>' in html_content:
+                    html_content = html_content.replace('<head>', f'<head>\n    {version_tag}')
+                
+                # Add version query param to assets
+                html_content = html_content.replace('.js"', f'.js?v={version}"')
+                html_content = html_content.replace('.css"', f'.css?v={version}"')
+                
+                return html_content
+        
+        # Fallback
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>Hermes</title></head>
+        <body><h1>Build not found</h1></body>
+        </html>
+        """
+    except Exception as e:
+        frappe.log_error(f"Hermes get_app error: {str(e)}\n{traceback.format_exc()}", "Hermes Error")
+        return f"Error: {str(e)}"
     
     # Fallback: return a simple message if build doesn't exist yet
     return """
