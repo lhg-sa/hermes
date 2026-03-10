@@ -110,7 +110,7 @@
         <label>Fechas *</label>
         <div class="dates-inputs">
           <div class="date-field">
-            <input type="date" v-model="form.fecha_entrada" class="form-input date-input" />
+            <input type="date" v-model="form.fecha_entrada" class="form-input date-input" @change="onFechaEntradaChange" />
           </div>
           <span class="date-separator">→</span>
           <div class="date-field">
@@ -302,6 +302,16 @@ const loadAvailableRooms = async () => {
 // Quick date selection functions
 const formatDate = (date) => {
   return date.toISOString().split('T')[0]
+}
+
+// Auto-set fecha_salida to one day after fecha_entrada
+const onFechaEntradaChange = () => {
+  if (form.value.fecha_entrada) {
+    const entrada = new Date(form.value.fecha_entrada)
+    const salida = new Date(entrada)
+    salida.setDate(salida.getDate() + 1)
+    form.value.fecha_salida = formatDate(salida)
+  }
 }
 
 const setToday = () => {
@@ -683,8 +693,8 @@ onMounted(() => {
 
 .date-input {
   width: 100%;
-  padding: 0.4rem 0.35rem;
-  font-size: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  font-size: 2rem;
   min-width: 0;
   box-sizing: border-box;
   max-width: 100%;

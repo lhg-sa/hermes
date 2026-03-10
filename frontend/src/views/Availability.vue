@@ -96,7 +96,7 @@
               v-for="day in weekInfo.days" 
               :key="day.date"
               class="cell"
-              @click="onCellClick(room, day)"
+              @click="onCellClick(room, day, roomName)"
             >
               <div 
                 class="status-cell"
@@ -336,7 +336,7 @@ const getStatusClass = (status) => {
   return classes[status] || 'status-free'
 }
 
-const onCellClick = (room, day) => {
+const onCellClick = (room, day, roomName) => {
   const dayData = room.days[day.date]
   
   // If cell is available (green/free), navigate to create reservation with dates
@@ -349,13 +349,13 @@ const onCellClick = (room, day) => {
     const checkinStr = checkinDate.toISOString().split('T')[0]
     const checkoutStr = checkoutDate.toISOString().split('T')[0]
     
-    // Navigate to reservations with pre-filled dates
+    // Navigate to reservations with pre-filled dates and room
     router.push({
       path: '/reservations',
       query: {
         fecha_entrada: checkinStr,
         fecha_salida: checkoutStr,
-        habitacion: room.name
+        habitacion: roomName
       }
     })
     return

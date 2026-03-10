@@ -14,59 +14,48 @@ def get_guatemala_today():
 def get_app():
     """Serve the Hermes PWA app with cache busting"""
     import time
-    import traceback
+    
+    # Custom domain for Hermes - usa puerto 81 para archivos estáticos
+    HERMES_DOMAIN = "http://127.0.0.1:81"
     
     try:
-        # Path to built files
-        app_path = os.path.join(os.path.dirname(__file__), 'public', 'hermes', 'index.html')
+        # Path to built files - use absolute path
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        app_path = os.path.join(base_path, 'public', 'hermes', 'index.html')
         
         # Generate version from file modification time
-        version = int(os.path.getmtime(app_path)) if os.path.exists(app_path) else int(time.time())
-        
         if os.path.exists(app_path):
-            with open(app_path, 'r') as f:
+            version = int(os.path.getmtime(app_path))
+            
+            with open(app_path, 'r', encoding='utf-8') as f:
                 html_content = f.read()
+                
+                # Replace base URL with custom domain
+                html_content = html_content.replace('/assets/hermes/hermes/', f'{HERMES_DOMAIN}/')
                 
                 # Inject version meta tag
                 version_tag = f'<meta name="hermes-version" content="{version}">'
                 if '<head>' in html_content:
                     html_content = html_content.replace('<head>', f'<head>\n    {version_tag}')
                 
-                # Add version query param to assets
+                # Add version query param to assets - this forces browser to reload
                 html_content = html_content.replace('.js"', f'.js?v={version}"')
                 html_content = html_content.replace('.css"', f'.css?v={version}"')
                 
                 return html_content
-        
-        # Fallback
-        return """
-        <!DOCTYPE html>
-        <html>
-        <head><title>Hermes</title></head>
-        <body><h1>Build not found</h1></body>
-        </html>
-        """
+        else:
+            return f"""<!DOCTYPE html>
+<html>
+<head><title>Hermes - Build Required</title></head>
+<body style="font-family: sans-serif; padding: 20px; text-align: center;">
+    <h1>Build not found</h1>
+    <p>Ejecute: cd apps/hermes/frontend && npm run build</p>
+</body>
+</html>"""
     except Exception as e:
+        import traceback
         frappe.log_error(f"Hermes get_app error: {str(e)}\n{traceback.format_exc()}", "Hermes Error")
-        return f"Error: {str(e)}"
-    
-    # Fallback: return a simple message if build doesn't exist yet
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Hermes</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body>
-        <div style="padding: 20px; text-align: center; font-family: sans-serif;">
-            <h1>Hermes App</h1>
-            <p>La aplicación está siendo configurada. Por favor ejecute:</p>
-            <code>cd apps/hermes/frontend && npm install && npm run build</code>
-        </div>
-    </body>
-    </html>
-    """
+        return f"<html><body><h1>Error: {str(e)}</h1></body></html>"
 
 @frappe.whitelist(allow_guest=True)
 def check_session():
@@ -80,9 +69,8 @@ def check_session():
 @frappe.whitelist(allow_guest=True)
 def get_rooms():
     """Get all enabled rooms"""
-    # Check authentication
-    if frappe.session.user == 'Guest':
-        return []
+    # Allow access without authentication
+    frappe.flags.ignore_permissions = True
     
     rooms = frappe.db.sql("""
         SELECT name, habitacion, distribucion, costo
@@ -95,9 +83,8 @@ def get_rooms():
 @frappe.whitelist(allow_guest=True)
 def get_week_availability(start_date=None):
     """Get room availability for a week starting from start_date"""
-    # Check authentication
-    if frappe.session.user == 'Guest':
-        return {'rooms': {}, 'totals': {}, 'week_info': {'days': [], 'month': '', 'year': '', 'weeks': ''}, 'start_date': None}
+    # Allow access without authentication
+    frappe.flags.ignore_permissions = True
     
     # Use Guatemala timezone for today
     guatemala_today = get_guatemala_today()
@@ -571,25 +558,38 @@ def create_customer(customer_name, telefono='', nit=''):
 @frappe.whitelist(allow_guest=True)
 def get_recent_reservations(limit=5):
     """Get the most recent reservations"""
-    # Check authentication
-    if frappe.session.user == 'Guest':
+    import traceback
+    try:
+        # Allow access without authentication for reports
+        frappe.flags.ignore_permissions = True
+        
+        # Log para debug
+        frappe.log_error(f"get_recent_reservations called. User: {frappe.session.user}, limit: {limit}", "Hermes Debug")
+        
+        # Use frappe.get_all for safer query
+        # Note: habitacion is in reservation_detail child table, not in reservation
+        reservations = frappe.get_all(
+            'reservation',
+            fields=['name', 'cliente', 'customer_name', 'fecha_entrada', 
+                   'fecha_salida', 'estado_reserva', 'total_global', 
+                   'total_abonado', 'total_pendiente', 'creation'],
+            order_by='creation desc',
+            limit=int(limit)
+        )
+        
+        # Get habitacion from reservation_detail for each reservation
+        for res in reservations:
+            room_details = frappe.get_all(
+                'reservation_detail',
+                filters={'parent': res['name']},
+                fields=['habitacion'],
+                limit=1
+            )
+            res['habitacion'] = room_details[0]['habitacion'] if room_details else ''
+        
+        frappe.log_error(f"Found {len(reservations)} reservations", "Hermes Debug")
+        
+        return reservations
+    except Exception as e:
+        frappe.log_error(f"Error in get_recent_reservations: {str(e)}\n{traceback.format_exc()}", "Hermes Error")
         return []
-    
-    reservations = frappe.db.sql("""
-        SELECT 
-            name,
-            customer_name,
-            habitacion,
-            fecha_entrada,
-            fecha_salida,
-            estado_reserva,
-            total_global,
-            total_abonado,
-            total_pendiente,
-            creation
-        FROM `tabreservation`
-        ORDER BY creation DESC
-        LIMIT %(limit)s
-    """, {'limit': int(limit)}, as_dict=True)
-    
-    return reservations

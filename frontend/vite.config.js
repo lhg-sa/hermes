@@ -12,10 +12,8 @@ export default defineConfig({
   // PLUGINS
   // ============================================
   plugins: [
-    vue(),
-    // PWA: descomenta si necesitas PWA
-    // VitePWA({ ... })
-  ].filter(Boolean),
+    vue()
+  ],
   
   // ============================================
   // RESOLVE ALIASES
@@ -39,10 +37,10 @@ export default defineConfig({
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),
       output: {
-        // Nombres estables - versión manejada en API
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]',
+        // HASH AUTOMÁTICO basado en contenido - cache busting nativo
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         
         // Separar vendor para mejor caché
         manualChunks: {

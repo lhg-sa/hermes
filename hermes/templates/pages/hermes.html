@@ -2,16 +2,48 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hermes</title>
-    <link rel="icon" type="image/svg+xml" href="/assets/hermes/hermes/favicon.svg">
-    <link rel="apple-touch-icon" href="/assets/hermes/hermes/apple-touch-icon.png">
-    <link rel="manifest" href="/assets/hermes/hermes/manifest.json">
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #app { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f9fafb; }
+        .loading { text-align: center; padding: 20px; }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e5e7eb; border-top: 4px solid #4F46E5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { color: #dc2626; padding: 20px; text-align: center; }
+    </style>
 </head>
 <body>
-    <div id="app"></div>
-    <script type="module" src="/assets/hermes/hermes/assets/index-DuZnWIAP.js"></script>
-    <link rel="stylesheet" href="/assets/hermes/hermes/assets/index-CifmtYm8.css">
+    <div id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p style="color: #6b7280;">Cargando Hermes...</p>
+        </div>
+    </div>
+    <script type="module">
+        // Load app from API - ensures fresh version every time
+        async function loadApp() {
+            try {
+                const response = await fetch('/api/method/hermes.api.get_app');
+                const data = await response.json();
+                
+                if (data.message) {
+                    // Replace entire document with the app HTML
+                    document.open();
+                    document.write(data.message);
+                    document.close();
+                } else {
+                    throw new Error('No se recibió contenido');
+                }
+            } catch (err) {
+                console.error('Error loading app:', err);
+                document.getElementById('app').innerHTML = 
+                    '<div class="error"><p>Error cargando la aplicación</p>' +
+                    '<p style="font-size: 12px; color: #6b7280;">Por favor recargue la página</p></div>';
+            }
+        }
+        
+        loadApp();
+    </script>
 </body>
 </html>

@@ -37,23 +37,37 @@
             </span>
           </div>
           <div class="reservation-details">
+            <!-- Fechas -->
             <div class="detail-row">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="detail-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
               <span>{{ formatDate(reservation.fecha_entrada) }} → {{ formatDate(reservation.fecha_salida) }}</span>
             </div>
+            <!-- Cliente -->
+            <div class="detail-row" v-if="reservation.cliente">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="detail-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+              <span>{{ reservation.cliente }}</span>
+            </div>
+            <!-- Habitación -->
             <div class="detail-row">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="detail-icon">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
               <span>{{ reservation.habitacion }}</span>
             </div>
-            <div class="detail-row" v-if="reservation.customer_name">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="detail-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              <span>{{ reservation.customer_name }}</span>
+            <!-- Valor y Abono -->
+            <div class="detail-row amounts">
+              <div class="amount-item">
+                <span class="amount-label">Valor:</span>
+                <span class="amount-value">Q{{ formatNumber(reservation.total_global) }}</span>
+              </div>
+              <div class="amount-item">
+                <span class="amount-label">Abono:</span>
+                <span class="amount-value paid">Q{{ formatNumber(reservation.total_abonado) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -123,6 +137,11 @@ const formatStatus = (status) => {
     'NOSHOW': 'No Show'
   }
   return statusMap[status] || status
+}
+
+const formatNumber = (num) => {
+  if (num === null || num === undefined) return '0.00'
+  return Number(num).toFixed(2)
 }
 
 const getStatusClass = (status) => {
@@ -292,6 +311,32 @@ onMounted(() => {
   gap: 0.5rem;
   font-size: 0.875rem;
   color: #64748b;
+}
+
+.detail-row.amounts {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.amount-item {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.amount-label {
+  color: #94a3b8;
+}
+
+.amount-value {
+  font-weight: 600;
+  color: #334155;
+}
+
+.amount-value.paid {
+  color: #059669;
 }
 
 .detail-icon {
