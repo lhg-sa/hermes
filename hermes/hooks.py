@@ -64,7 +64,7 @@ whitelisted_methods = [
 # include js in doctype views
 doctype_js = {
     "Calendar View": "public/js/custom_calender.js",
-    "Sales Invoice": "public/js/sales_invoice_combo.js"
+    "Sales Invoice": ["public/js/sales_invoice_combo.js", "public/js/sales_invoice_reservation.js"]
 }
 
 # Fixtures - Custom Fields
