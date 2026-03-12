@@ -11,6 +11,7 @@
   "distribucion",
   "column_break_foie",
   "costo",
+  "codigo_combo",
   "habilitado"
  ],
  "fields": [
@@ -18,21 +19,21 @@
    "fieldname": "habitacion",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Room",
+   "label": "Habitacion",
    "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "costo",
    "fieldtype": "Currency",
-   "label": "Base Price",
+   "label": "Precio Base",
    "precision": "2"
   },
   {
    "default": "0",
    "fieldname": "habilitado",
    "fieldtype": "Check",
-   "label": "Active"
+   "label": "Activa"
   },
   {
    "fieldname": "column_break_foie",
@@ -41,12 +42,18 @@
   {
    "fieldname": "distribucion",
    "fieldtype": "Data",
-   "label": "Distribution"
+   "label": "Distribuci\u00f3n"
+  },
+  {
+   "fieldname": "codigo_combo",
+   "fieldtype": "Link",
+   "label": "Codigo Combo ",
+   "options": "Item"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-09 21:30:03.160397",
+ "modified": "2026-03-10 22:00:33.862094",
  "modified_by": "Administrator",
  "module": "Hermes",
  "name": "room",

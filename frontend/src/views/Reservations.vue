@@ -109,13 +109,16 @@
       <div class="dates-section">
         <label>Fechas *</label>
         <div class="dates-inputs">
-          <div class="date-field">
-            <input type="date" v-model="form.fecha_entrada" class="form-input date-input" @change="onFechaEntradaChange" />
-          </div>
-          <span class="date-separator">→</span>
-          <div class="date-field">
-            <input type="date" v-model="form.fecha_salida" class="form-input date-input" />
-          </div>
+          <VueDatePicker
+            v-model="dateRange"
+            range
+            :enable-time-picker="false"
+            :format="'dd/MM/yyyy'"
+            placeholder="Seleccionar fechas"
+            :min-date="new Date()"
+            auto-apply
+            class="date-range-picker"
+          />
         </div>
         <!-- Quick date selection -->
         <div class="quick-dates">
@@ -209,6 +212,8 @@ import { useI18n } from '../composables/useI18n'
 import { useAuth } from '../composables/useAuth'
 import { useFormatters } from '../composables/useFormatters'
 import BottomNavigation from '../components/BottomNavigation.vue'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
 
 const router = useRouter()
 const route = useRoute()
@@ -247,6 +252,24 @@ const form = ref({
   estado_reserva: 'TENTATIVO',
   total_abonado: 0,
   notas: ''
+})
+
+// Date range for VueDatePicker
+const dateRange = ref(null)
+
+// Watch dateRange changes and sync with form
+watch(dateRange, (newRange) => {
+  if (newRange && newRange[0] && newRange[1]) {
+    form.value.fecha_entrada = newRange[0].toISOString().split('T')[0]
+    form.value.fecha_salida = newRange[1].toISOString().split('T')[0]
+  }
+})
+
+// Watch form dates to update dateRange (for quick date buttons)
+watch([() => form.value.fecha_entrada, () => form.value.fecha_salida], ([entrada, salida]) => {
+  if (entrada && salida) {
+    dateRange.value = [new Date(entrada), new Date(salida)]
+  }
 })
 
 const nights = computed(() => {
@@ -320,6 +343,7 @@ const setToday = () => {
   tomorrow.setDate(tomorrow.getDate() + 1)
   form.value.fecha_entrada = formatDate(today)
   form.value.fecha_salida = formatDate(tomorrow)
+  dateRange.value = [today, tomorrow]
 }
 
 const setTomorrow = () => {
@@ -329,6 +353,7 @@ const setTomorrow = () => {
   dayAfter.setDate(dayAfter.getDate() + 1)
   form.value.fecha_entrada = formatDate(tomorrow)
   form.value.fecha_salida = formatDate(dayAfter)
+  dateRange.value = [tomorrow, dayAfter]
 }
 
 const setThisWeekend = () => {
@@ -342,6 +367,7 @@ const setThisWeekend = () => {
   sunday.setDate(saturday.getDate() + 1)
   form.value.fecha_entrada = formatDate(saturday)
   form.value.fecha_salida = formatDate(sunday)
+  dateRange.value = [saturday, sunday]
 }
 
 let searchTimeout = null
@@ -705,6 +731,28 @@ onMounted(() => {
   font-size: 0.75rem;
   flex-shrink: 0;
   padding: 0 0.125rem;
+}
+
+/* Date Range Picker */
+.date-range-picker {
+  width: 100%;
+}
+
+.date-range-picker :deep(.dp__input) {
+  padding: 0.625rem 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.date-range-picker :deep(.dp__input:hover) {
+  border-color: #cbd5e1;
+}
+
+.date-range-picker :deep(.dp__input_focus) {
+  border-color: #136dec;
+  box-shadow: 0 0 0 2px rgba(19, 109, 236, 0.1);
 }
 
 .quick-dates {

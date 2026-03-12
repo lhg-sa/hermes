@@ -62,7 +62,13 @@ whitelisted_methods = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Calendar View" : "public/js/custom_calender.js"}
+doctype_js = {
+    "Calendar View": "public/js/custom_calender.js",
+    "Sales Invoice": "public/js/sales_invoice_combo.js"
+}
+
+# Fixtures - Custom Fields
+fixtures = ["Custom Field"]
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

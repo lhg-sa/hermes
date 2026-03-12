@@ -556,40 +556,44 @@ def create_customer(customer_name, telefono='', nit=''):
     return {'name': customer.name, 'customer_name': customer.customer_name}
 
 @frappe.whitelist(allow_guest=True)
-def get_recent_reservations(limit=5):
-    """Get the most recent reservations"""
+def get_recent_reservations(limit=5, _cache=None):
+    """
+    Get the most recent reservations with room details.
+    Optimized: Single query with GROUP_CONCAT to avoid N+1 queries.
+    
+    Returns:
+        list: List of reservation dicts with habitacion and codigo_combo
+    """
     import traceback
     try:
-        # Allow access without authentication for reports
         frappe.flags.ignore_permissions = True
         
-        # Log para debug
-        frappe.log_error(f"get_recent_reservations called. User: {frappe.session.user}, limit: {limit}", "Hermes Debug")
+        # Single optimized query with GROUP_CONCAT
+        # This avoids N+1 queries by getting all data in one go
+        reservations = frappe.db.sql("""
+            SELECT 
+                r.name, r.cliente, r.customer_name, r.fecha_entrada, 
+                r.fecha_salida, r.estado_reserva, r.total_global, 
+                r.total_abonado, r.total_pendiente, r.creation,
+                GROUP_CONCAT(DISTINCT rd.habitacion ORDER BY rd.habitacion SEPARATOR ' | ') as habitacion,
+                GROUP_CONCAT(rd.codigo_combo ORDER BY rd.habitacion SEPARATOR ' | ') as codigo_combo
+            FROM `tabreservation` r
+            LEFT JOIN `tabreservation_detail` rd ON rd.parent = r.name
+            GROUP BY r.name
+            ORDER BY r.creation DESC
+            LIMIT %s
+        """, (int(limit),), as_dict=True)
         
-        # Use frappe.get_all for safer query
-        # Note: habitacion is in reservation_detail child table, not in reservation
-        reservations = frappe.get_all(
-            'reservation',
-            fields=['name', 'cliente', 'customer_name', 'fecha_entrada', 
-                   'fecha_salida', 'estado_reserva', 'total_global', 
-                   'total_abonado', 'total_pendiente', 'creation'],
-            order_by='creation desc',
-            limit=int(limit)
-        )
-        
-        # Get habitacion from reservation_detail for each reservation
+        # Clean up null values
         for res in reservations:
-            room_details = frappe.get_all(
-                'reservation_detail',
-                filters={'parent': res['name']},
-                fields=['habitacion'],
-                limit=1
-            )
-            res['habitacion'] = room_details[0]['habitacion'] if room_details else ''
-        
-        frappe.log_error(f"Found {len(reservations)} reservations", "Hermes Debug")
+            res['habitacion'] = res.get('habitacion') or ''
+            res['codigo_combo'] = res.get('codigo_combo') or ''
         
         return reservations
+        
     except Exception as e:
-        frappe.log_error(f"Error in get_recent_reservations: {str(e)}\n{traceback.format_exc()}", "Hermes Error")
+        frappe.log_error(
+            f"Error in get_recent_reservations: {str(e)}\n{traceback.format_exc()}", 
+            "Hermes Error"
+        )
         return []

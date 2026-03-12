@@ -106,34 +106,16 @@
           </tr>
         </tbody>
         <tfoot v-if="showTotals">
-          <tr class="totals-row tentative">
-            <td class="sticky-col total-label">Tentativo</td>
+          <tr class="totals-row occupied">
+            <td class="sticky-col total-label">Ocupadas</td>
             <td v-for="day in weekInfo.days" :key="day.date" class="total-cell">
-              {{ totals[day.date]?.tentative || 0 }}
-            </td>
-          </tr>
-          <tr class="totals-row unpaid">
-            <td class="sticky-col total-label">Reserva Sin Pago</td>
-            <td v-for="day in weekInfo.days" :key="day.date" class="total-cell">
-              {{ totals[day.date]?.unpaid || 0 }}
-            </td>
-          </tr>
-          <tr class="totals-row paid">
-            <td class="sticky-col total-label">Reserva Pagada</td>
-            <td v-for="day in weekInfo.days" :key="day.date" class="total-cell">
-              {{ totals[day.date]?.paid || 0 }}
-            </td>
-          </tr>
-          <tr class="totals-row noshow">
-            <td class="sticky-col total-label">No Show</td>
-            <td v-for="day in weekInfo.days" :key="day.date" class="total-cell">
-              {{ totals[day.date]?.noshow || 0 }}
+              {{ displayTotals[day.date]?.occupied || 0 }}
             </td>
           </tr>
           <tr class="totals-row free">
             <td class="sticky-col total-label">Libres</td>
             <td v-for="day in weekInfo.days" :key="day.date" class="total-cell">
-              {{ totals[day.date]?.free || 0 }}
+              {{ displayTotals[day.date]?.free || 0 }}
             </td>
           </tr>
           <tr class="totals-toggle-row">
@@ -240,6 +222,18 @@ const generateYears = () => {
 
 // Totals visibility state
 const showTotals = ref(false)
+
+// Computed totals for display (grouped)
+const displayTotals = computed(() => {
+  const result = {}
+  for (const [date, data] of Object.entries(totals.value)) {
+    result[date] = {
+      occupied: (data.tentative || 0) + (data.unpaid || 0) + (data.paid || 0) + (data.noshow || 0),
+      free: data.free || 0
+    }
+  }
+  return result
+})
 
 const loadData = async () => {
   loading.value = true
@@ -806,8 +800,8 @@ onMounted(() => {
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  min-width: 70px;
-  max-width: 70px;
+  min-width: 100px;
+  max-width: 100px;
 }
 
 .day-name {
@@ -859,8 +853,8 @@ onMounted(() => {
   color: #1e293b;
   white-space: nowrap;
   border-right: 1px solid #e2e8f0;
-  min-width: 70px;
-  max-width: 70px;
+  min-width: 100px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -887,31 +881,10 @@ onMounted(() => {
   background: white;
 }
 
-.totals-row.tentative .total-label {
-  background: white;
-  color: #d97706;
-  border: 2px solid #fbbf24;
-  border-right: 1px solid #e2e8f0;
-}
-
-.totals-row.unpaid .total-label {
-  background: white;
-  color: #2563eb;
-  border: 2px solid #60a5fa;
-  border-right: 1px solid #e2e8f0;
-}
-
-.totals-row.paid .total-label {
+.totals-row.occupied .total-label {
   background: white;
   color: #dc2626;
   border: 2px solid #f87171;
-  border-right: 1px solid #e2e8f0;
-}
-
-.totals-row.noshow .total-label {
-  background: white;
-  color: #4b5563;
-  border: 2px solid #9ca3af;
   border-right: 1px solid #e2e8f0;
 }
 
@@ -924,7 +897,7 @@ onMounted(() => {
 
 .total-label {
   padding: 0.5rem;
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1084,6 +1057,27 @@ onMounted(() => {
     border-color: #334155;
   }
   
+  .totals-toggle-row {
+    background: #ffffff;
+  }
+  
+  .toggle-totals-btn {
+    background: #ffffff;
+    color: #3b82f6;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  }
+  
+  .toggle-totals-btn:hover {
+    background: #eff6ff;
+  }
+  
+  .toggle-totals-btn.hide {
+    background: #ffffff;
+    color: #64748b;
+    border-color: #64748b;
+  }
+  
   .bottom-nav {
     background: #1e293b;
     border-color: #334155;
@@ -1113,12 +1107,9 @@ onMounted(() => {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   }
   
-  .totals-row.tentative .total-label,
-  .totals-row.unpaid .total-label,
-  .totals-row.paid .total-label,
-  .totals-row.noshow .total-label,
+  .totals-row.occupied .total-label,
   .totals-row.free .total-label {
-    background: #1e293b;
+    background: #ffffff;
   }
   
   .modal-content {
